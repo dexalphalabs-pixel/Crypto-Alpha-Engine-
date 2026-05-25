@@ -1,4 +1,4 @@
-name: Crypto Alpha Engine v0.7.2
+name: Crypto Alpha Engine v0.7.3
 
 on:
   workflow_dispatch:
@@ -19,6 +19,7 @@ env:
   DIGEST_MODE: "daily"
   DIGEST_HOUR_UTC: "18"
   DIGEST_MIN_INTERVAL_HOURS: "20"
+  TELEGRAM_TEST_ON_RUN: "true"
 
 jobs:
   scan:
@@ -47,6 +48,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Prepare outputs directory
+        run: mkdir -p outputs
+
+      - name: Test Telegram connection
+        if: env.TELEGRAM_TEST_ON_RUN == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: python tools/test_telegram.py
+
       - name: Run Crypto Alpha Engine
         env:
           SAFE_MODE: "true"
@@ -54,6 +66,9 @@ jobs:
           DATABASE_PATH: "outputs/crypto_alpha.db"
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SEND_TELEGRAM_SUMMARY: "true"
+          SEND_TELEGRAM_ALERTS: "true"
+          SEND_TELEGRAM_DAILY_DIGEST: "true"
           SCORING_PROFILE: "balanced"
           DRY_RUN_VERBOSE: "false"
           DIGEST_MODE: "daily"
